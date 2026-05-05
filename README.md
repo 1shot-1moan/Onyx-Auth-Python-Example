@@ -1,6 +1,6 @@
-# Onyx Gate â€” Python Example
+# Onyx Gate - Python Example
 
-> Official Python SDK and loader example for [Onyx Gate Auth](https://auth.script-kittens.com) â€” the authentication platform built for cheat developers.
+> Official Python SDK and loader example for [Onyx Gate Auth](https://auth.script-kittens.com) - the authentication platform built for cheat developers.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-3572A5?style=flat&logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Mac-lightgrey?style=flat)
@@ -13,12 +13,12 @@
 
 Onyx Gate is a KeyAuth-style authentication system built by Script Kittens. It gives your cheat or tool:
 
-- **HWID Lock** â€” bind each user to one machine
-- **License Keys** â€” generate, sell, and track keys from the dashboard
-- **Live Sessions** â€” see who's online right now, kick them instantly
-- **Blacklist** â€” ban HWIDs, IPs, or usernames with one click
-- **Variables** â€” push values to your app at runtime without recompiling
-- **Plan Gating** â€” free vs paid feature separation built in
+- **HWID Lock** - bind each user to one machine
+- **License Keys** - generate, sell, and track keys from the dashboard
+- **Live Sessions** - see who's online right now, kick them instantly
+- **Blacklist** - ban HWIDs, IPs, or usernames with one click
+- **Variables** - push values to your app at runtime without recompiling
+- **Plan Gating** - free vs paid feature separation built in
 
 ---
 
@@ -26,7 +26,7 @@ Onyx Gate is a KeyAuth-style authentication system built by Script Kittens. It g
 
 | File | Purpose |
 |---|---|
-| `skauth.py` | Core SDK â€” drop into **any** Python project |
+| `skauth.py` | Core SDK - drop into **any** Python project |
 | `loader.py` | Full console loader example |
 | `requirements.txt` | Dependencies (`requests` only) |
 
@@ -46,11 +46,11 @@ Onyx Gate is a KeyAuth-style authentication system built by Script Kittens. It g
 pip install requests
 ```
 
-**2. Set your App ID** â€” open `loader.py` and change line 20:
+**2. Set your App ID** - open `loader.py` and change line 20:
 ```python
 APP_ID = "YOUR_APP_ID_HERE"
 ```
-Get your App ID from [auth.script-kittens.com](https://auth.script-kittens.com) â†’ Manage Apps â†’ Credentials.
+Get your App ID from [auth.script-kittens.com](https://auth.script-kittens.com) → Manage Apps → Credentials.
 
 **3. Run**
 ```bash
@@ -63,7 +63,7 @@ python loader.py
 
 ```
 ==================================================
-         Script Kittens â€” Internal Panel
+         Script Kittens - Internal Panel
            Powered by Onyx Gate Auth
 ==================================================
 
@@ -128,7 +128,7 @@ val = auth.get_var("variable_name")
 
 ## Feature gating patterns
 
-**Pattern A â€” Entire tool is paid only:**
+**Pattern A - Entire tool is paid only:**
 ```python
 # Call after login
 if auth.user["plan"] not in ["paid", "vip", "lifetime"]:
@@ -137,7 +137,7 @@ if auth.user["plan"] not in ["paid", "vip", "lifetime"]:
     exit(1)
 ```
 
-**Pattern B â€” Mixed free and paid features:**
+**Pattern B - Mixed free and paid features:**
 ```python
 if choice == "1":
     run_free_feature()        # everyone can use this
@@ -146,7 +146,7 @@ elif choice == "2":
     if auth.user["plan"] in ["paid", "vip", "lifetime"]:
         run_premium_feature()
     else:
-        print("Upgrade required â€” discord.gg/tWwUSPh5GT")
+        print("Upgrade required - discord.gg/tWwUSPh5GT")
 ```
 
 ---
