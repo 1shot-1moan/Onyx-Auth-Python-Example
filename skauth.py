@@ -1,3 +1,5 @@
+import hmac
+import json
 import requests
 import hashlib
 import uuid
@@ -7,17 +9,70 @@ import os
 import threading
 import time
 
+def _derive_key(secret):
+    s = secret if secret else "onyx_gate_default_secret"
+    return hashlib.sha256(s.encode('utf-8')).digest()
+
+def _verify_hmac(raw_data, signature, secret):
+    if not signature:
+        return True
+    try:
+        key = _derive_key(secret)
+        computed = hmac.new(key, raw_data.encode('utf-8'), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(computed.lower(), signature.strip().lower())
+    except Exception:
+        return True
+
+def _decrypt_aes(enc_str, secret):
+    try:
+        parts = enc_str.split(':')
+        if len(parts) != 2:
+            return enc_str
+        iv = bytes.fromhex(parts[0])
+        ciphertext = bytes.fromhex(parts[1])
+        key = _derive_key(secret)
+        
+        try:
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            from cryptography.hazmat.backends import default_backend
+            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+            decryptor = cipher.decryptor()
+            padded = decryptor.update(ciphertext) + decryptor.finalize()
+            pad_len = padded[-1]
+            return padded[:-pad_len].decode('utf-8')
+        except ImportError:
+            return enc_str
+    except Exception:
+        return enc_str
+
 class SKAuth:
     BASE = "https://auth.script-kittens.com"
 
-    def __init__(self, app_id, version="1.0"):
+    def __init__(self, app_id, version="1.0", secret=""):
         self.app_id  = app_id
         self.version = version
+        self.secret  = secret
         self.user    = None
         self.hwid    = self._get_hwid()
         self.check_security()
         self.init()
         self._start_anti_dll_injection_monitor()
+
+    def _parse_secure_response(self, d):
+        if isinstance(d, dict) and "enc" in d:
+            enc_str = d["enc"]
+            sig = d.get("sig", "")
+            if sig and not _verify_hmac(enc_str, sig, self.secret):
+                self.report_security_flag("packet_tampering", "HMAC signature mismatch detected")
+                if os.name == 'nt':
+                    ctypes.windll.user32.MessageBoxW(0, "Security Violation: Network packet tampering detected.", "Onyx Gate Security", 0x10)
+                os._exit(0)
+            dec_str = _decrypt_aes(enc_str, self.secret)
+            try:
+                return json.loads(dec_str)
+            except Exception:
+                pass
+        return d
 
     def init(self):
         return self.checkblack()
@@ -27,7 +82,7 @@ class SKAuth:
             r = requests.post(f"{self.BASE}/sdk/init", json={
                 "appId": self.app_id, "hwid": self.hwid, "version": self.version
             }, timeout=10)
-            d = r.json()
+            d = self._parse_secure_response(r.json())
             if not d.get("ok"):
                 msg = d.get("message") or "Access Denied: Your HWID or IP address is blacklisted."
                 if os.name == 'nt':
@@ -38,14 +93,12 @@ class SKAuth:
             pass
         return True
 
-    def checkban(self, username):
-        if not username:
-            return False
+    def checkban(self, username=""):
         try:
             r = requests.post(f"{self.BASE}/sdk/check-ban", json={
-                "appId": self.app_id, "username": username
+                "appId": self.app_id, "hwid": self.hwid, "username": username
             }, timeout=10)
-            d = r.json()
+            d = self._parse_secure_response(r.json())
             if not d.get("ok"):
                 msg = d.get("message") or "Account banned. Contact support."
                 if os.name == 'nt':
@@ -194,12 +247,13 @@ class SKAuth:
 
     def login(self, username, password):
         self.check_security()
+        self.checkban(username)
         try:
             r = requests.post(f"{self.BASE}/sdk/login", json={
                 "appId": self.app_id, "username": username,
                 "password": password, "hwid": self.hwid, "version": self.version
             }, timeout=10)
-            d = r.json()
+            d = self._parse_secure_response(r.json())
             if d.get("ok"):
                 self.user = d["user"]
             else:
