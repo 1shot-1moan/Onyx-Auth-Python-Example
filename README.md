@@ -97,14 +97,18 @@ Copy `skauth.py` into your project, then:
 ```python
 from skauth import SKAuth
 
-# 1. Create auth object
-auth = SKAuth("YOUR_APP_ID", "1.0")
+# 1. Create auth object (runs HWID/IP check & anti-injection automatically)
+auth = SKAuth(APP_ID, APP_VERSION)
+
+# Pre-check HWID/IP Blacklist or User Ban
+auth.init()
+auth.checkblack()
+auth.checkban("username")
 
 # 2. Login
-result = auth.login(username, password)
-if result["ok"]:
-    user = auth.user
-    print(f"Welcome {user['username']}!")
+res = auth.login("username", "password")
+if res.get("ok"):
+    print(f"Welcome {auth.user['username']}!")
     print(f"Plan: {user['plan']}")
 else:
     print(f"Error: {result['message']}")

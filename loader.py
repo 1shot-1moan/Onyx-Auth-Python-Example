@@ -98,8 +98,9 @@ def require_paid(auth):
         sys.exit(1)
 
 def main():
-    # Initialize auth
+    # Initialize auth & perform blacklisted device pre-check
     auth = SKAuth(APP_ID, APP_VERSION)
+    auth.init()
 
     # Show login screen until success
     login_screen(auth)
